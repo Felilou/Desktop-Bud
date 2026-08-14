@@ -11,11 +11,17 @@ config_version=5
 [application]
 
 config/name="desktop-bud"
+run/main_scene="uid://vayk26wmtbhl"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [display]
 
+window/size/always_on_top=true
+window/size/transparent=true
+window/size/no_focus=true
+window/size/minimize_disabled=true
+window/size/maximize_disabled=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
