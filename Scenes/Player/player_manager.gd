@@ -5,18 +5,18 @@ enum State {SITTING, WALKING, TALKING, WAKING_UP, LEAVING, ENTERING, IDLING}
 
 var current_process:Process
 
-var player:CharacterBody2D
-var animator:AnimatedSprite2D
-var hitbox:CollisionShape2D
+var body:PlayerBody
+var animator:PlayerAnimation
+var hitbox:Hitbox
 
 var rng = RandomNumberGenerator.new() # will be removed later
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	player = get_node("Player")
+	body = get_node("Player")
 	animator = get_node("Player/Animation")
 	hitbox = get_node("Player/Hitbox")
-	current_process = GoTo.new(player, animator, Vector2(300, 300))
+	current_process = GoTo.new(body, animator, Vector2(300, 300))
 	current_process._start()
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -29,7 +29,7 @@ func _process(_delta: float) -> void:
 # will be handeled from a more global instance later - processes to.
 func _determine_next_process():
 	print("setting new process")
-	var proc = GoTo.new(player, animator, Vector2(rng.randf_range(0, player.screen_size.x), rng.randf_range(0, player.screen_size.y)))
+	var proc = GoTo.new(body, animator, Vector2(rng.randf_range(0, body.screen_size.x), rng.randf_range(0, body.screen_size.y)))
 	print("new process: ", proc)
 	return proc
 

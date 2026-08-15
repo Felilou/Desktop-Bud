@@ -1,4 +1,4 @@
-extends CharacterBody2D
+class_name PlayerBody extends CharacterBody2D
 
 @export var speed:float = 4000
 @export var target:Vector2 = Vector2.ZERO
