@@ -386,9 +386,10 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1c8hd"]
 size = Vector2(20, 34)
 
-[node name="Player" type="Area2D" unique_id=1851450641]
+[node name="Player" type="AnimatableBody2D" unique_id=586549548]
 script = ExtResource("1_owm7s")
-target = Vector2(2000, -200)
+speed = 100
+target = Vector2(100, 300)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1047904127]
 scale = Vector2(1.5, 1.5)

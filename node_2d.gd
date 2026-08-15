@@ -1,52 +1,38 @@
-extends Area2D
+extends AnimatableBody2D
 
 @export var speed = 400
 var screen_size
 @export var target = Vector2.ZERO
+const offset = 2
 
 enum Direction {NORTH, EAST, SOUTH, WEST}
 
 func _ready():
 	screen_size = get_viewport_rect().size
-	
 
-func _process(delta: float):
-	var vel = calculate_velocity_normalized_based_on_target_and_current_pos(target) * speed
+func _physics_process(delta: float):
+	var vel = position.direction_to(target) * delta * speed
+	var dist = position.distance_to(target)
 	var dir = calc_direction_based_on_velocity(vel)
-	play_animation_based_on_dir_and_vel(dir, vel)
-	position += vel * delta
-	position = position.clamp(Vector2.ZERO, screen_size)
+	var anim = calc_animation_based_on_direction_and_distance(dir, dist)
+	$AnimatedSprite2D.play(anim)
+	if  dist > offset:
+		move_and_collide(vel)
 
 func calc_direction_based_on_velocity(velocity:Vector2):
 	if(velocity.x>0):
 		return Direction.EAST
-	elif(velocity.x<0):
+	if(velocity.x<0):
 		return Direction.WEST
-	elif(velocity.y>0):
+	if(velocity.y>0):
 		return Direction.NORTH
-	elif(velocity.y<0):
+	if(velocity.y<0):
 		return Direction.SOUTH
 	return Direction.EAST
 	
-func calculate_velocity_normalized_based_on_target_and_current_pos(target:Vector2):
-	var velocity = Vector2.ZERO
-	var crnt_pos = position
-	if crnt_pos.distance_to(target) < 1.0:
-		return velocity
-	if crnt_pos.x < target.x:
-		velocity.x += 1
-	if crnt_pos.x > target.x:
-		velocity.x -= 1
-	if crnt_pos.y < target.y:
-		velocity.y += 1
-	if crnt_pos.y > target.y:
-		velocity.y -= 1
-	return velocity.normalized()
-	
-func play_animation_based_on_dir_and_vel(direction:Direction, velocity:Vector2):
-	var animated_sprite = $AnimatedSprite2D
+func calc_animation_based_on_direction_and_distance(direction:Direction, distance:float):
 	var anim;
-	if(velocity==Vector2.ZERO):
+	if(distance<offset):
 		anim = "idle_"
 	else:
 		anim="walk_"
@@ -61,4 +47,4 @@ func play_animation_based_on_dir_and_vel(direction:Direction, velocity:Vector2):
 		Direction.WEST:
 			anim+="w"
 	
-	animated_sprite.play(anim)
+	return anim
