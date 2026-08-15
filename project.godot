@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="desktop-bud"
-run/main_scene="uid://vayk26wmtbhl"
+run/main_scene="uid://x5ndeu2bot3y"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
