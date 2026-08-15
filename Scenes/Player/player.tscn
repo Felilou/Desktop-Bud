@@ -393,11 +393,10 @@ script = ExtResource("1_htcer")
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1786217859]
 script = ExtResource("2_dd0ac")
-speed = 2000.0
+speed = 1000.0
 target = Vector2(200, 150)
 
 [node name="Animation" type="AnimatedSprite2D" parent="Player" unique_id=1047904127]
-scale = Vector2(1.5, 1.5)
 sprite_frames = SubResource("SpriteFrames_t5iwh")
 animation = &"idle_e"
 script = ExtResource("5_gk6dx")
