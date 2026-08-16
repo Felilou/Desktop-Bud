@@ -7,33 +7,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `desktop-bud` is a Godot 4.7 (GL Compatibility renderer) desktop pet application. The game window is
 configured (in `project.godot` under `[display]`) to be transparent, always-on-top, non-focusable, and
 non-resizable/minimizable, so the running app appears as a borderless sprite sitting on the user's desktop
-rather than a normal windowed game.
+rather than a normal windowed game. Per-pixel window transparency is enabled, and the actual click-through
+region is computed at runtime (see Architecture) so only the character sprite itself is clickable/draggable —
+everywhere else on screen, clicks pass through to whatever is behind the window.
 
 ## Commands
 
 This is a Godot Editor project, not a CLI-driven build. There is no package manager, linter, or test suite.
 
 - Open/run: open `project.godot` in the Godot 4.7 editor, or run headlessly via
-  `godot --path . ` (requires the Godot 4.7 executable on PATH).
-- The main scene is `Scenes/character.tscn` (referenced by `run/main_scene` in `project.godot`).
+  `godot --path .` (requires the Godot 4.7 executable on PATH).
+- The main scene is `Scenes/global.tscn` (referenced by `run/main_scene` in `project.godot`).
 
 ## Architecture
 
-- `node_2d.gd` is the sole gameplay script, attached to the `Player` `Area2D` node in
-  `Scenes/character.tscn`. It drives the character purely by comparing `$AnimatedSprite2D.position`
-  against an exported `target: Vector2`: each `_process` frame it derives a normalized velocity toward
-  the target, buckets that velocity into one of four cardinal `Direction` enum values (NORTH/EAST/SOUTH/WEST),
-  and plays the matching `AnimatedSprite2D` animation (`walk_n/e/s/w` or `idle_n/e/s/w`). There is no actual
-  movement/physics applied yet — `target` and `speed` are exported but position is not currently updated by
-  velocity, so movement must be driven externally (e.g. by the editor Inspector or future code) by changing
-  `target`.
-- `Scenes/character.tscn` defines the `Player` node tree: `Area2D` (script + `CollisionShape2D`) with an
-  `AnimatedSprite2D` child. Its `SpriteFrames` resource is built from two spritesheets sliced into
-  16x24 `AtlasTexture` regions (6 frames per direction):
-  - `Adam/Adam_idle_anim_16x16.png` → `idle_n/e/s/w` animations
-  - `Adam/Adam_run_16x16.png` → `walk_n/e/s/w` animations
+Scene tree, root to leaf: `Scenes/global.tscn` (`GlobalManager`, script `Scenes/global.gd`) →
+`Scenes/Player/player.tscn` instanced as `Player manager` (script `player_manager.gd`) → `Player`
+(`CharacterBody2D`, script `player.gd`) with children `Animation` (`AnimatedSprite2D`, script
+`player_animation.gd`) and `Hitbox` (`CollisionShape2D`).
+
+- **`Scenes/global.gd`** (root `GlobalManager`, `Node2D`) is what makes the click-through window work: every
+  frame it reads the player's hitbox rect, transforms it into screen space via
+  `get_viewport().get_screen_transform()`, and calls `DisplayServer.window_set_mouse_passthrough(polygon)` so
+  mouse input only hits the window inside that polygon. Anything outside the character's hitbox is
+  click-through to the desktop/apps behind it.
+- **`player_manager.gd`** (`PlayerManager`, on the `Player manager` node) is the behavior driver. It holds an
+  abstract inner `Process` class (`_start`/`_check_end`/`_end`/`_to_string`) and a concrete `GoTo` subclass
+  that sets a target position and forces the animator into non-forced (auto) direction/animation mode. Each
+  `_process` frame it checks whether the current process has ended (`_check_end`) and, if so, ends it and asks
+  `_determine_next_process()` for the next one (currently just picks a new random on-screen point — this is a
+  placeholder ("will be handled from a more global instance later")). This is the extension point for adding
+  new pet behaviors/states (`State` enum already lists `SITTING, WALKING, TALKING, WAKING_UP, LEAVING,
+  ENTERING, IDLING` but only `WALKING`-style `GoTo` is implemented).
+- **`player.gd`** (`Player`, `CharacterBody2D`) drives actual movement: `_physics_process` computes velocity
+  toward `target` (exported) at `speed` (exported) and calls `move_and_slide()`; `is_clamped_to_screen`
+  (currently always `false`) would clamp position to the viewport if enabled. `_has_reached_target` /
+  `_calculate_direction_to_target` are called cross-script by both `player_manager.gd` and
+  `player_animation.gd`, so changing their signatures requires updating all three files.
+- **`player_animation.gd`** (`Animation`, `AnimatedSprite2D`) derives which of 8 animations to play
+  (`walk`/`idle` × `n`/`e`/`s`/`w`) purely from the parent `Player`'s current direction/reached-target state,
+  unless overridden via `_force_direction`/`_force_animation` (used by `GoTo._start()` to clear any override
+  back to automatic). Reaches into `parent` (the `Player` node) directly rather than via signals.
+- **`Scenes/Player/player.tscn`** defines the `SpriteFrames` resource: two spritesheets sliced into 16x24
+  `AtlasTexture` regions (6 frames per direction) — `Adam/Adam_idle_anim_16x16.png` → `idle_n/e/s/w`,
+  `Adam/Adam_run_16x16.png` → `walk_n/e/s/w`.
 - Art assets live under `Adam/` (character spritesheets: idle, run, phone, sit variants) and `Interior/`
   (tileset spritesheet `Interiors_free_16x16.png`), each with a Godot-generated `.import` sidecar — these
   sidecars are regenerated by the editor and shouldn't be hand-edited.
 - Physics is configured for Jolt Physics (`[physics] 3d/physics_engine="Jolt Physics"`) even though gameplay
-  is currently 2D (`Area2D`-based, not `CharacterBody2D`/`RigidBody2D`).
+  is 2D (`CharacterBody2D`-based).
+
+## Notes
+
+- `links.md` is a personal scratch list of resources; it currently notes [Velopack](https://velopack.io/) as
+  the planned approach for shipping auto-updates from GitHub releases.

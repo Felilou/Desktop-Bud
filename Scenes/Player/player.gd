@@ -1,6 +1,6 @@
-extends CharacterBody2D
+class_name PlayerBody extends CharacterBody2D
 
-@export var speed:float = 400
+@export var speed:float = 4000
 @export var target:Vector2 = Vector2.ZERO
 
 var is_clamped_to_screen:bool = false
@@ -20,7 +20,7 @@ func _physics_process(delta: float):
 
 	move_and_slide()
 
-	if(clamp):
+	if(is_clamped_to_screen):
 		position.clamp(Vector2.ZERO, screen_size)
 
 func _calculate_velocity_to_target(delta_time:float):

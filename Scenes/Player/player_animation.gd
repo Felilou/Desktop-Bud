@@ -1,3 +1,4 @@
+class_name PlayerAnimation
 extends AnimatedSprite2D
 
 enum Animations {WALK, IDLE}
