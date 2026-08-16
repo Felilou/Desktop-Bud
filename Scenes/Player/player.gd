@@ -1,42 +1,64 @@
-class_name PlayerBody extends CharacterBody2D
+class_name Player
+extends Node2D
 
-@export var speed:float = 4000
+var body:PhysicsBody
+var animator:AnimatedPlayerSprite
+var clickable_area:ClickableArea
+
 @export var target:Vector2 = Vector2.ZERO
+@export var speed:float = 2000
+@export var target_offset:float = 2
 
-var is_clamped_to_screen:bool = false
-const target_offset:float = 2
-var screen_size:Vector2
+var _current_state:State
+enum State {WALKING, WAITING_FOR_NEW_TASK, SITTING, WAITING, TALKING}
 
-func _ready():
-	_set_screen_size()
-	pass
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	body = get_node("PhysicsBody")
+	animator = get_node("PhysicsBody/Animation")
+	clickable_area = get_node("PhysicsBody/Clickable Area")
+	_current_state = State.WAITING_FOR_NEW_TASK
 
-func _physics_process(delta: float):
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta: float) -> void:
+	match _current_state:
+		
+		State.WAITING_FOR_NEW_TASK:
+			animator.animate_waiting()
+		
+		State.WALKING:
+			if(body.has_reached_target(target, target_offset)):
+				_current_state = State.WAITING_FOR_NEW_TASK
+			else:
+				body.move_towards_target(target, speed)
+				animator.animate_walking(body.calculate_direction_to_target(target))
+		
+		State.WAITING:
+			if(animator.timer_ellapsed()):
+				_current_state = State.WAITING_FOR_NEW_TASK
+			else:
+				animator.animate_waiting()
+		
+		State.TALKING:
+			if(animator.timer_ellapsed()):
+				_current_state = State.WAITING_FOR_NEW_TASK
+			else:
+				animator.animate_talking()
 
-	if  ! _has_reached_target():
-		velocity = _calculate_velocity_to_target(delta)
-	else:
-		velocity = Vector2.ZERO
-
-	move_and_slide()
-
-	if(is_clamped_to_screen):
-		position.clamp(Vector2.ZERO, screen_size)
-
-func _calculate_velocity_to_target(delta_time:float):
-	return _calculate_direction_to_target() * delta_time * speed
-	
-func _calculate_direction_to_target():
-	return position.direction_to(target).normalized()
-
-func _has_reached_target():
-	return _calculate_distance_to_target() < target_offset 
-	
-func _set_target_pos(new_target:Vector2):
+func go_to_target(new_target:Vector2) -> void:
+	print("going to %v", new_target)
 	target = new_target
+	_current_state = State.WALKING
+	
+func say_something(message:String, seconds:float) -> void:
+	print("saying %s for %f seconds", message, seconds)
+	_current_state = State.TALKING
+	animator.say_something(message, seconds)
+	
+func wait(seconds:float) -> void:
+	print("waiting for %f seconds", seconds)
+	_current_state = State.WAITING
+	animator.wait_x_seconds(seconds)
 
-func _calculate_distance_to_target():
-	return position.distance_to(target)
-
-func _set_screen_size():
-	screen_size = get_viewport_rect().size
+func get_current_state() -> State:
+	return _current_state
