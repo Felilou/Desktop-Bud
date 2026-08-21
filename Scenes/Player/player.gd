@@ -49,10 +49,7 @@ func _process(_delta: float) -> void:
 			else:
 				animator.animate_talking()
 
-		State.DRAGGING:
-			animator.animate_waiting()
-
-		State.SITTING:
+		State.DRAGGING, State.SITTING:
 			animator.animate_waiting()
 
 func go_to_target(new_target:Vector2) -> void:
