@@ -14,6 +14,8 @@ func _ready() -> void:
 	add_child(_popup)
 
 	_indicator_id = DisplayServer.create_status_indicator(APP_ICON, "desktop-bud", _on_indicator_activated)
+	if _indicator_id == -1:
+		printerr("ExitManager: status indicator not supported on this platform")
 
 func _on_indicator_activated(_mouse_button: int, position: Vector2i) -> void:
 	_popup.popup(Rect2i(position, Vector2i.ZERO))
@@ -23,4 +25,5 @@ func _on_popup_id_pressed(id: int) -> void:
 		exit_requested.emit()
 
 func _exit_tree() -> void:
-	DisplayServer.delete_status_indicator(_indicator_id)
+	if _indicator_id != -1:
+		DisplayServer.delete_status_indicator(_indicator_id)

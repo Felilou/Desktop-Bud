@@ -67,6 +67,11 @@ func _free_animation_and_direction_and_timer(timer: Timer):
 func timer_ellapsed():
 	return !_on_timer
 
+func cancel_active_timer() -> void:
+	for child in get_children():
+		if child is Timer:
+			_free_animation_and_direction_and_timer(child)
+
 func _timer_that_frees_animation_and_direction_on_timeout() -> Timer:
 	var _timer = Timer.new()
 	_timer.one_shot = true

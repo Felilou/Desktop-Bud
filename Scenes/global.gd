@@ -60,6 +60,7 @@ func _start_exit_sequence() -> void:
 		return
 	_is_quitting = true
 	SaveData.save_last_position(player.body.position)
+	player.animator.cancel_active_timer()
 	player.go_to_target(_offscreen_point_below(player.body.position))
 
 func _offscreen_point_below(pos:Vector2) -> Vector2:
