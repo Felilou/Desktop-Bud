@@ -416,6 +416,11 @@ polygon = PackedVector2Array(-10, -17, -10, 17, 10, 17, 10, -17)
 polygons = [null]
 script = ExtResource("7_0u5uq")
 
+[node name="Area2D" type="Area2D" parent="PhysicsBody/Clickable Area"]
+input_pickable = true
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="PhysicsBody/Clickable Area/Area2D"]
+
 [node name="SpeechBubble" type="Node2D" parent="PhysicsBody" unique_id=1676983298]
 visible = false
 position = Vector2(0, -26)
