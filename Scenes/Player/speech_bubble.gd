@@ -22,6 +22,22 @@ func show_message(message: String) -> void:
 func hide_message() -> void:
 	hide()
 
+func get_polygons_in_screen_transform() -> PackedVector2Array:
+	if not visible or _content_size == Vector2.ZERO:
+		return PackedVector2Array()
+
+	var screen_transform = get_viewport().get_screen_transform()
+	var half := _content_size / 2.0 + Vector2(BORDER, BORDER)
+	var corners := [
+		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
+		Vector2(half.x, half.y), Vector2(-half.x, half.y),
+	]
+
+	var res := PackedVector2Array()
+	for corner in corners:
+		res.append(screen_transform * (corner + global_position))
+	return res
+
 func _draw() -> void:
 	if _content_size == Vector2.ZERO:
 		return
