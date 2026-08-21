@@ -2,9 +2,6 @@ extends Node
 
 const REPO := "Felilou/Desktop-Bud"
 const LATEST_RELEASE_URL := "https://api.github.com/repos/%s/releases/latest" % REPO
-const CACHED_PCK_PATH := "user://desktop-bud.pck"
-const DOWNLOAD_TMP_PATH := CACHED_PCK_PATH + ".new"
-const VERSION_MARKER_PATH := "user://installed_version.txt"
 
 func _ready() -> void:
 	var request := HTTPRequest.new()
@@ -38,12 +35,12 @@ func _find_pck_asset_url(assets: Array) -> String:
 
 func _download_pck(url: String, version: String) -> void:
 	var dir := DirAccess.open("user://")
-	if dir.file_exists(DOWNLOAD_TMP_PATH):
-		dir.remove(DOWNLOAD_TMP_PATH)
+	if dir.file_exists(LauncherPaths.PENDING_PCK_PATH):
+		dir.remove(LauncherPaths.PENDING_PCK_PATH)
 
 	var request := HTTPRequest.new()
 	add_child(request)
-	request.download_file = DOWNLOAD_TMP_PATH
+	request.download_file = LauncherPaths.PENDING_PCK_PATH
 	request.request_completed.connect(_on_pck_downloaded.bind(version))
 	request.request(url)
 
@@ -51,15 +48,20 @@ func _on_pck_downloaded(result: int, response_code: int, _headers: PackedStringA
 	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
 		return
 
-	var dir := DirAccess.open("user://")
-	if dir.rename(DOWNLOAD_TMP_PATH, CACHED_PCK_PATH) == OK:
-		_write_installed_version(version)
+	# The pending file is promoted to the active cache path on the NEXT
+	# launch (launcher.gd, before anything loads it) rather than here - the
+	# engine keeps this session's active .pck open for its whole run, and
+	# renaming over an open file can silently fail on Windows.
+	_write_installed_version(version)
 
 func _read_installed_version() -> String:
-	if not FileAccess.file_exists(VERSION_MARKER_PATH):
+	if not FileAccess.file_exists(LauncherPaths.VERSION_MARKER_PATH):
 		return ""
-	return FileAccess.get_file_as_string(VERSION_MARKER_PATH).strip_edges()
+	return FileAccess.get_file_as_string(LauncherPaths.VERSION_MARKER_PATH).strip_edges()
 
 func _write_installed_version(version: String) -> void:
-	var file := FileAccess.open(VERSION_MARKER_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(LauncherPaths.VERSION_MARKER_PATH, FileAccess.WRITE)
+	if file == null:
+		printerr("UpdateChecker: failed to write ", LauncherPaths.VERSION_MARKER_PATH)
+		return
 	file.store_string(version)
