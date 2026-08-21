@@ -1,10 +1,16 @@
 [gd_scene format=3 uid="uid://x5ndeu2bot3y"]
 
-[ext_resource type="Script" uid="uid://dnlungvyo8avh" path="res://Scenes/Player/player_manager.gd" id="1_htcer"]
-[ext_resource type="Script" uid="uid://b6f7tl8yujpe" path="res://Scenes/Player/player.gd" id="2_dd0ac"]
+[ext_resource type="Script" uid="uid://dnlungvyo8avh" path="res://Scenes/Player/player.gd" id="1_htcer"]
+[ext_resource type="Script" uid="uid://b6f7tl8yujpe" path="res://Scenes/Player/physics_body.gd" id="2_dd0ac"]
 [ext_resource type="Texture2D" uid="uid://d1w8mrc8ja0rv" path="res://Adam/Adam_idle_anim_16x16.png" id="3_0u5uq"]
 [ext_resource type="Texture2D" uid="uid://b6ubqac2kksoi" path="res://Adam/Adam_run_16x16.png" id="4_jlvik"]
-[ext_resource type="Script" uid="uid://do2j88lw48q1w" path="res://Scenes/Player/player_animation.gd" id="5_gk6dx"]
+[ext_resource type="Script" uid="uid://do2j88lw48q1w" path="res://Scenes/Player/animator.gd" id="5_gk6dx"]
+[ext_resource type="Script" uid="uid://ratgp4uk31ww" path="res://Scenes/Player/hitbox.gd" id="6_0u5uq"]
+[ext_resource type="Script" uid="uid://cxw2fj8ttkmh7" path="res://Scenes/Player/clickable_area.gd" id="7_0u5uq"]
+[ext_resource type="Script" uid="uid://c58cn11e5yc85" path="res://Scenes/Player/speech_bubble.gd" id="8_bubble"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1c8hd"]
+size = Vector2(20, 34)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2mse5"]
 atlas = ExtResource("3_0u5uq")
@@ -385,23 +391,39 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_1c8hd"]
-size = Vector2(20, 34)
-
-[node name="Player manager" type="Node" unique_id=1935969346]
+[node name="Player" type="Node2D" unique_id=1729775025]
 script = ExtResource("1_htcer")
+speed = 5000.0
 
-[node name="Player" type="CharacterBody2D" parent="." unique_id=1786217859]
+[node name="PhysicsBody" type="CharacterBody2D" parent="." unique_id=1786217859]
 script = ExtResource("2_dd0ac")
-speed = 2000.0
-target = Vector2(200, 150)
 
-[node name="Animation" type="AnimatedSprite2D" parent="Player" unique_id=1047904127]
-scale = Vector2(1.5, 1.5)
+[node name="Hitbox" type="CollisionShape2D" parent="PhysicsBody" unique_id=703967425]
+visible = false
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_1c8hd")
+script = ExtResource("6_0u5uq")
+
+[node name="Animation" type="AnimatedSprite2D" parent="PhysicsBody" unique_id=1047904127]
 sprite_frames = SubResource("SpriteFrames_t5iwh")
 animation = &"idle_e"
 script = ExtResource("5_gk6dx")
 
-[node name="Hitbox" type="CollisionShape2D" parent="Player" unique_id=703967425]
+[node name="Clickable Area" type="Polygon2D" parent="PhysicsBody" unique_id=1222184388]
 position = Vector2(0, 2)
-shape = SubResource("RectangleShape2D_1c8hd")
+color = Color(1, 1, 0.27058825, 1)
+polygon = PackedVector2Array(-10, -17, -10, 17, 10, 17, 10, -17)
+polygons = [null]
+script = ExtResource("7_0u5uq")
+
+[node name="SpeechBubble" type="Node2D" parent="PhysicsBody"]
+position = Vector2(0, -26)
+visible = false
+script = ExtResource("8_bubble")
+
+[node name="Label" type="Label" parent="PhysicsBody/SpeechBubble"]
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0, 0, 0, 1)

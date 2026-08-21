@@ -1,0 +1,1 @@
+class_name Hitbox extends CollisionShape2D
