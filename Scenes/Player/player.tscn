@@ -416,14 +416,13 @@ polygon = PackedVector2Array(-10, -17, -10, 17, 10, 17, 10, -17)
 polygons = [null]
 script = ExtResource("7_0u5uq")
 
-[node name="SpeechBubble" type="Node2D" parent="PhysicsBody"]
-position = Vector2(0, -26)
+[node name="SpeechBubble" type="Node2D" parent="PhysicsBody" unique_id=1676983298]
 visible = false
+position = Vector2(0, -26)
 script = ExtResource("8_bubble")
 
-[node name="Label" type="Label" parent="PhysicsBody/SpeechBubble"]
+[node name="Label" type="Label" parent="PhysicsBody/SpeechBubble" unique_id=29805246]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
-theme_override_font_sizes/font_size = 10
-theme_override_colors/font_color = Color(0, 0, 0, 1)
