@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  GODOT_VERSION: "4.7.1-stable"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot headless editor
+        run: |
+          curl -L -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip godot.zip
+          chmod +x Godot_v${GODOT_VERSION}_linux.x86_64
+          sudo mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
+
+      - name: Download and install export templates
+        run: |
+          curl -L -o templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}
+          unzip -j templates.tpz -d ~/.local/share/godot/export_templates/${GODOT_VERSION}
+
+      - name: Import project resources
+        run: godot --headless --editor --quit --path .
+
+      - name: Import Launcher resources
+        run: godot --headless --editor --quit --path Launcher
+
+      - name: Export game .pck
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-pack "Windows Desktop" build/desktop-bud.pck
+
+      - name: Export Launcher .exe
+        run: godot --headless --path Launcher --export-release "Windows Desktop" ../build/Launcher.exe
+
+      - name: Package release zip
+        working-directory: build
+        run: zip "desktop-bud-${GITHUB_REF_NAME}-win64.zip" Launcher.exe desktop-bud.pck
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "build/desktop-bud-${GITHUB_REF_NAME}-win64.zip" \
+            "build/desktop-bud.pck" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes

@@ -10,11 +10,15 @@ config_version=5
 
 [application]
 
-config/name="desktop-bud"
+config/name="desktop-bud-launcher"
 config/version="0.1.0"
-run/main_scene="uid://bw5xwdb7daece"
+run/main_scene="res://Scenes/launcher.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+UpdateChecker="*res://update_checker.gd"
 
 [display]
 
@@ -30,10 +34,6 @@ window/size/maximize_disabled=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/per_pixel_transparency/allowed=true
-
-[physics]
-
-3d/physics_engine="Jolt Physics"
 
 [rendering]
 

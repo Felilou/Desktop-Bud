@@ -1,61 +1,66 @@
-# Autoupdate-Plan (Velopack)
+# Autoupdate
 
-Status: **nur Planung, noch nicht umgesetzt.** `links.md` notiert [Velopack](https://velopack.io/)
-als angedachten Weg für Auto-Updates aus GitHub Releases. Dieses Dokument hält fest, warum das für
-`desktop-bud` nicht trivial ist und welche Bausteine für eine spätere Umsetzung fehlen.
+Status: **umgesetzt** (`Launcher/`-Projekt + `.github/workflows/release.yml`). Dieses Dokument
+beschreibt, wie das System funktioniert und wie man eine neue Version released.
 
-## Warum das hier nicht "einfach nur eine Lib einbinden" ist
+## Warum kein Velopack
 
-`desktop-bud` ist ein reines GDScript-Projekt (`project.godot` → `config/features` listet nur
-`"4.7", "GL Compatibility"`, kein Mono/C#-Feature). Velopack ist primär eine **.NET-Bibliothek**:
-der In-App-Update-Check (`UpdateManager` API) läuft als .NET-Code. GDScript kann keine .NET-Assemblies
-direkt referenzieren — Godot bräuchte dafür die Mono/C#-Variante des Editors bzw. Exports.
+Velopack ist eine .NET-Bibliothek, `desktop-bud` ist reines GDScript (`config/features` in
+`project.godot` listet nur `"4.7", "GL Compatibility"`, kein Mono/C#). Godot hat keinen eingebauten
+Auto-Updater (siehe die offenen Godot-Proposals
+[#8451](https://github.com/godotengine/godot-proposals/issues/8451),
+[#8588](https://github.com/godotengine/godot-proposals/issues/8588),
+[#2089](https://github.com/godotengine/godot-proposals/issues/2089)), aber es gibt ein etabliertes,
+rein Godot-natives Muster dafür, das hier umgesetzt wurde: ein kleines, stabiles **Launcher**-Executable
+lädt das eigentliche Spiel als `.pck`-Datei zur Laufzeit nach
+(`ProjectSettings.load_resource_pack()` kann laut offizieller Doku komplett neue Szenen/Skripte
+einbringen, die im Basis-Executable gar nicht vorhanden waren). Damit gibt es das klassische
+"Programm kann sich nicht selbst überschreiben"-Problem gar nicht erst – nur die `.pck`-Datei wird
+ausgetauscht, nie die laufende `.exe`.
 
-Damit gibt es zwei grundsätzlich verschiedene Richtungen:
+## Architektur
 
-### Option A: Godot-Mono/C# aktivieren, Velopack als In-App-Update-Check
-- Export-Presets auf die .NET/Mono-Build von Godot 4.7 umstellen.
-- Einen kleinen C#-Bootstrap-Node schreiben, der beim Start `Velopack.UpdateManager` aufruft (auf
-  neue Version prüfen, herunterladen, `ApplyUpdatesAndRestart()`), und diesen Node parallel zur
-  bestehenden GDScript-Logik in `Scenes/global.tscn` einhängen.
-- Vorteil: "richtiger" In-App-Update-Check mit Delta-Updates, Rollback etc., wie von Velopack gedacht.
-- Nachteil: Umstieg auf Mono betrifft den ganzen Build-/Export-Prozess, nicht nur ein Feature; größerer
-  Eingriff in die Toolchain als die drei next_steps.md-Punkte.
+Zwei getrennte Godot-Projekte in diesem Repo:
 
-### Option B: Velopack nur als Packaging-/Installer-Schicht, Update-Check selbstgebaut
-- Velopack (`vpk pack`) nur benutzen, um die von Godot exportierte `.exe` in ein installierbares,
-  update-fähiges Paket zu verpacken (das geht rein CLI-seitig, ohne dass das Spiel selbst .NET-Code
-  enthält).
-- Update-*Check* in-App selbst bauen: `HTTPRequest` gegen die GitHub-Releases-API
-  (`GET /repos/Felilou/Desktop-Bud/releases/latest`), Versionsstring vergleichen.
-- Bei neuer Version: entweder nur einen Hinweis anzeigen ("Update verfügbar, bitte neu installieren"),
-  oder ein separates kleines Updater-Binary starten, das Velopack von außen aufruft.
-- Vorteil: kein Mono-Umstieg nötig, bleibt reines GDScript.
-- Nachteil: kein "nahtloses" In-App-Update wie bei Option A, mehr Marschall-Logik selbst zu bauen.
+- **Repo-Root (`project.godot`, `Scenes/`, …)** – das eigentliche Spiel, unverändert. Wird nur noch als
+  **`.pck`** exportiert (`export_presets.cfg`, Preset "Windows Desktop", `--export-pack`), nie mehr als
+  eigene `.exe` für die Auslieferung.
+- **`Launcher/`** – eigenes, minimales Godot-Projekt, das tatsächlich als `.exe` an Nutzer ausgeliefert
+  wird (`Launcher/export_presets.cfg`, `--export-release`). Eigene `project.godot` mit denselben
+  `[display]`-Fenstereinstellungen wie das Hauptspiel (transparent, `always_on_top`, `no_focus`,
+  borderless) – das ist nötig, weil diese Einstellungen beim Engine-Start aus dem Executable-eigenen
+  `project.godot` gelesen werden und ein nachträglich geladenes `.pck` sie nicht überschreiben kann.
+  - `Launcher/launcher.gd` (Hauptszene `Launcher/Scenes/launcher.tscn`): lädt beim Start
+    `user://desktop-bud.pck` falls vorhanden (schon mal aktualisiert), sonst die Kopie, die direkt neben
+    der `.exe` mitgeliefert wird (`OS.get_executable_path().get_base_dir()`) – der allererste Start
+    funktioniert also immer offline. Danach `get_tree().change_scene_to_file("res://Scenes/global.tscn")`
+    – ab hier läuft das Spiel exakt wie bisher.
+  - `Launcher/update_checker.gd` (Autoload `UpdateChecker`, läuft unabhängig von der Szene weiter):
+    prüft per `HTTPRequest` gegen `https://api.github.com/repos/Felilou/Desktop-Bud/releases/latest`,
+    vergleicht `tag_name` gegen `user://installed_version.txt`. Bei neuer Version wird das
+    `.pck`-Release-Asset nach `user://desktop-bud.pck.new` heruntergeladen und **erst nach
+    vollständigem Download** zu `user://desktop-bud.pck` umbenannt (kein halbfertiges Pack im
+    Ernstfall). Wirkt beim **nächsten** Programmstart – kein Hot-Swap der laufenden Szene, keine
+    Sprechblasen-Benachrichtigung (bewusst, siehe unten). Schlägt der Request fehl (offline, kein
+    Release, Rate-Limit) → stiller No-Op, der zuletzt gecachte/mitgelieferte Stand bleibt aktiv.
 
-**Offene Entscheidung für später:** Mono/C#-Route (A) vs. reiner GDScript-Selbstbau-Updater (B). Das
-ist bewusst nicht vorentschieden — hängt davon ab, wie wichtig nahtlose Delta-Updates sind gegenüber
-dem Aufwand, den Mono-Umstieg für den Rest des Projekts zu verkraften.
+## Bewusste Einschränkungen
 
-## Was davor noch fehlt (unabhängig von A/B)
+- **Kein Code-Signing.** Der Windows-Build ist unsigniert, SmartScreen zeigt beim Download/Start eine
+  Warnung. Üblich für frühe Indie-/Hobby-Projekte, zurückgestellt bis es relevant wird.
+- **Keine Signatur-/Checksum-Prüfung** des heruntergeladenen `.pck`. Vertretbar ohne sensible Daten.
+- **Kein Fortschrittsbalken** für den Download – die Pack-Dateien hier sind klein.
+- **Kein Hot-Reload**: ein gefundenes Update wird erst beim nächsten Start aktiv, nicht sofort.
 
-- **Versionierung**: `project.godot` hat aktuell kein `config/version`. Müsste ergänzt werden, damit
-  es überhaupt einen Versionsstring gibt, den ein Update-Check vergleichen kann.
-- **Export-Preset**: Es gibt aktuell keine `export_presets.cfg` im Repo (steht auch explizit im
-  `.gitignore`) — ein Windows-Export-Preset muss erst eingerichtet werden, bevor überhaupt ein
-  releasefähiges Binary gebaut werden kann.
-- **CI/Release-Pipeline (grober Entwurf)**:
-  1. GitHub-Actions-Job: Godot 4.7 headless exportieren (`godot --headless --export-release "Windows Desktop" ...`).
-  2. `vpk pack` auf das exportierte Verzeichnis anwenden → erzeugt Velopack-Release-Artefakte.
-  3. Artefakte + `RELEASES`-Datei an ein GitHub Release anhängen (per `gh release upload` oder
-     Velopack's eigenem GitHub-Push-Support).
-- **Signierung/Codesigning**: für ein sauberes Auto-Update unter Windows i.d.R. relevant (SmartScreen-
-  Warnungen), hier noch komplett offen und nicht weiter ausgearbeitet.
+## Release-Ablauf für eine neue Version
 
-## Nächster konkreter Schritt, wenn's losgeht
+1. `config/version` in `project.godot` (Root) hochzählen.
+2. Tag `vX.Y.Z` pushen (Schema passend zum bereits existierenden `v0.1.0`).
+3. `.github/workflows/release.yml` läuft automatisch: lädt Godot 4.7.1 headless + Export-Templates,
+   exportiert `build/desktop-bud.pck` (Root-Projekt) und `build/Launcher.exe` (`Launcher/`-Projekt),
+   packt beides in ein Zip, erstellt ein GitHub Release für den Tag und lädt **beide** Assets hoch:
+   das Zip (für Neuinstallationen) und das nackte `desktop-bud.pck` separat (das lädt
+   `update_checker.gd` bei künftigen Versionen nach, ohne den Launcher jedes Mal neu herunterzuladen).
 
-1. Entscheidung A vs. B treffen (siehe oben).
-2. `config/version` in `project.godot` ergänzen.
-3. Windows-Export-Preset anlegen und einmal manuell exportieren, um zu sehen was Velopack als Input
-   bekommt.
-4. Erst danach den eigentlichen Update-Mechanismus (Mono-Bootstrap oder HTTPRequest-Check) bauen.
+Damit reicht ab jetzt "Version hochzählen, Tag pushen" – kein manueller Build-/Upload-Schritt mehr
+nötig.
