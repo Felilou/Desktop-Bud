@@ -46,17 +46,17 @@ func _process(_delta: float) -> void:
 				animator.animate_talking()
 
 func go_to_target(new_target:Vector2) -> void:
-	print("going to %v", new_target)
+	print("going to ", new_target)
 	target = new_target
 	_current_state = State.WALKING
-	
+
 func say_something(message:String, seconds:float) -> void:
-	print("saying %s for %f seconds", message, seconds)
+	print("saying \"", message, "\" for ", seconds, " seconds")
 	_current_state = State.TALKING
 	animator.say_something(message, seconds)
-	
+
 func wait(seconds:float) -> void:
-	print("waiting for %f seconds", seconds)
+	print("waiting for ", seconds, " seconds")
 	_current_state = State.WAITING
 	animator.wait_x_seconds(seconds)
 
