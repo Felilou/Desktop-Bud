@@ -1,6 +1,9 @@
 class_name PhysicsBody extends CharacterBody2D
 
+var hitbox:Hitbox
+
 func _ready():
+	hitbox = get_node("Hitbox")
 	pass
 
 func _physics_process(_delta: float):

@@ -8,7 +8,8 @@ var signals : Array[Signal]
 var rng:RandomNumberGenerator
 
 func _create_random_target() -> Vector2:
-	return Vector2(rng.randi_range(0, GlobalManager.viewport_manager_instance.screen_size.x), rng.randi_range(0, GlobalManager.viewport_manager_instance.screen_size.y))
+	return Vector2(rng.randf_range(GlobalManager.player.body.hitbox.shape.get_rect().size.x, GlobalManager.viewport_manager_instance.screen_size.x),
+					rng.randf_range(GlobalManager.player.body.hitbox.shape.get_rect().size.y, GlobalManager.viewport_manager_instance.screen_size.y))
 	
 func _random_seconds() -> float:
 	return 3
