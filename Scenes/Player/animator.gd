@@ -12,6 +12,9 @@ var space_char = "_"
 var force_dir
 var force_anim
 var _on_timer:bool
+var _bubble_visible:bool
+
+@onready var speech_bubble:SpeechBubble = get_parent().get_node("SpeechBubble")
 
 func _calculate_direction_by_direction_to_target(direction_to_target:Vector2) -> Util.Direction:
 	if (abs(direction_to_target).x > abs(direction_to_target).y):
@@ -43,8 +46,8 @@ func say_something(message:String, seconds:float):
 	var timer = _timer_that_frees_animation_and_direction_on_timeout()
 	add_child(timer)
 	timer.start(seconds)
-	print("Player: ", message)
-	#TODO speech bubble with message
+	_bubble_visible = true
+	speech_bubble.show_message(message)
 
 func wait_x_seconds(seconds:float):
 	var timer = _timer_that_frees_animation_and_direction_on_timeout()
@@ -55,6 +58,9 @@ func _free_animation_and_direction_and_timer(timer: Timer):
 	force_dir = null
 	force_anim = null
 	_on_timer = false
+	if _bubble_visible:
+		_bubble_visible = false
+		speech_bubble.hide_message()
 	remove_child(timer)
 	timer.queue_free()
 

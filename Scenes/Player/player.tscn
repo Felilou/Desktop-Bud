@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://do2j88lw48q1w" path="res://Scenes/Player/animator.gd" id="5_gk6dx"]
 [ext_resource type="Script" uid="uid://ratgp4uk31ww" path="res://Scenes/Player/hitbox.gd" id="6_0u5uq"]
 [ext_resource type="Script" uid="uid://cxw2fj8ttkmh7" path="res://Scenes/Player/clickable_area.gd" id="7_0u5uq"]
+[ext_resource type="Script" uid="uid://c58cn11e5yc85" path="res://Scenes/Player/speech_bubble.gd" id="8_bubble"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1c8hd"]
 size = Vector2(20, 34)
@@ -414,3 +415,15 @@ color = Color(1, 1, 0.27058825, 1)
 polygon = PackedVector2Array(-10, -17, -10, 17, 10, 17, 10, -17)
 polygons = [null]
 script = ExtResource("7_0u5uq")
+
+[node name="SpeechBubble" type="Node2D" parent="PhysicsBody"]
+position = Vector2(0, -26)
+visible = false
+script = ExtResource("8_bubble")
+
+[node name="Label" type="Label" parent="PhysicsBody/SpeechBubble"]
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0, 0, 0, 1)
