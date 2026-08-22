@@ -4,6 +4,7 @@ extends Node2D
 var body:PhysicsBody
 var animator:AnimatedPlayerSprite
 var clickable_area:ClickableArea
+var speech_bubble:SpeechBubble
 
 @export var target:Vector2 = Vector2.ZERO
 @export var speed:float = 2000
@@ -17,6 +18,7 @@ func _ready() -> void:
 	body = get_node("PhysicsBody")
 	animator = get_node("PhysicsBody/Animation")
 	clickable_area = get_node("PhysicsBody/Clickable Area")
+	speech_bubble = get_node("PhysicsBody/SpeechBubble")
 	clickable_area.clicked.connect(_on_clicked)
 	clickable_area.drag_started.connect(_on_drag_started)
 	clickable_area.drag_moved.connect(_on_drag_moved)
@@ -53,17 +55,17 @@ func _process(_delta: float) -> void:
 			animator.animate_waiting()
 
 func go_to_target(new_target:Vector2) -> void:
-	print("going to %v", new_target)
+	print("going to ", new_target)
 	target = new_target
 	_current_state = State.WALKING
-	
+
 func say_something(message:String, seconds:float) -> void:
-	print("saying %s for %f seconds", message, seconds)
+	print("saying \"", message, "\" for ", seconds, " seconds")
 	_current_state = State.TALKING
 	animator.say_something(message, seconds)
-	
+
 func wait(seconds:float) -> void:
-	print("waiting for %f seconds", seconds)
+	print("waiting for ", seconds, " seconds")
 	_current_state = State.WAITING
 	animator.wait_x_seconds(seconds)
 
