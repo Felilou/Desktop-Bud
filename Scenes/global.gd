@@ -19,7 +19,7 @@ func _ready() -> void:
 	add_child(player)
 
 
-	viewport_manager_instance = ViewportManager.new([player.clickable_area])
+	viewport_manager_instance = ViewportManager.new([player.clickable_area, player.speech_bubble])
 	add_child(viewport_manager_instance)
 
 	task_manager_instance = PlayerTaskManager.new(player)

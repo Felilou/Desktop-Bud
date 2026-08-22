@@ -4,6 +4,7 @@ extends Node2D
 var body:PhysicsBody
 var animator:AnimatedPlayerSprite
 var clickable_area:ClickableArea
+var speech_bubble:SpeechBubble
 
 @export var target:Vector2 = Vector2.ZERO
 @export var speed:float = 2000
@@ -17,6 +18,7 @@ func _ready() -> void:
 	body = get_node("PhysicsBody")
 	animator = get_node("PhysicsBody/Animation")
 	clickable_area = get_node("PhysicsBody/Clickable Area")
+	speech_bubble = get_node("PhysicsBody/SpeechBubble")
 	_current_state = State.WAITING_FOR_NEW_TASK
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
