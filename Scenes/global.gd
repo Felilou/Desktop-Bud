@@ -8,8 +8,12 @@ static var task_manager_instance:PlayerTaskManager
 static var exit_manager_instance:ExitManager
 
 const OFFSCREEN_MARGIN := 40.0
+const GREETING_MESSAGE := "Hallo, ich bin Adam!"
+const GREETING_SECONDS := 4.0
 
 var _is_quitting:bool = false
+var _pending_greeting:bool = false
+var _greeting_in_progress:bool = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -31,6 +35,7 @@ func _ready() -> void:
 
 	var saved_position = SaveData.load_last_position()
 	var target_position:Vector2 = saved_position if saved_position != null else viewport_manager_instance.screen_size / 2
+	_pending_greeting = not SaveData.has_greeted()
 	player.body.position = _offscreen_point_below(target_position)
 
 	print("spawning in player")
@@ -45,9 +50,17 @@ func _process(_delta: float) -> void:
 			get_tree().quit()
 		return
 
-	if(player.get_current_state()==player.State.WAITING_FOR_NEW_TASK):
-		print("creating new task")
-		task_manager_instance.give_random_task_to_player()
+	if player.get_current_state() == player.State.WAITING_FOR_NEW_TASK:
+		if _greeting_in_progress:
+			_greeting_in_progress = false
+			SaveData.mark_greeted()
+		if _pending_greeting:
+			_pending_greeting = false
+			_greeting_in_progress = true
+			player.say_something(GREETING_MESSAGE, GREETING_SECONDS)
+		else:
+			print("creating new task")
+			task_manager_instance.give_random_task_to_player()
 
 	pass
 
